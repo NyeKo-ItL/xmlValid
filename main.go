@@ -10,22 +10,29 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("Usage: go run main.go /path/to/xml/files")
+		log.Fatal("Usage: go run main.go /path/to/xml/files [optional:/directory/of/xsd]")
 	}
 
 	xmlDir := os.Args[1]
 
-	// Find XSD in parent directory
-	parentDir := filepath.Dir(xmlDir)
+	// If arg2 is set, use it as xsdDir, otherwise use parent of xmlDir
+	var xsdSearchDir string
+	if len(os.Args) >= 3 {
+		xsdSearchDir = os.Args[2]
+	} else {
+		xsdSearchDir = filepath.Dir(xmlDir)
+	}
+
 	var xsdPath string
 
-	err := filepath.Walk(parentDir, func(path string, info os.FileInfo, err error) error {
+	// Look for the first .xsd file in the given directory
+	err := filepath.Walk(xsdSearchDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".xsd") {
 			xsdPath = path
-			return filepath.SkipDir
+			return filepath.SkipDir // Stop after finding the first .xsd
 		}
 		return nil
 	})
@@ -34,12 +41,12 @@ func main() {
 	}
 
 	if xsdPath == "" {
-		log.Fatal("❌ No .xsd file found in the parent directory.")
+		log.Fatal("❌ No .xsd file found.")
 	}
 
 	log.Printf("📄 Using XSD file: %s\n", xsdPath)
 
-	// Validate all XML files
+	// Validate all XML files in the xmlDir
 	err = filepath.Walk(xmlDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("Error accessing file %s: %v\n", path, err)
