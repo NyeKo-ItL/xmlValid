@@ -19,6 +19,13 @@ func main() {
 	var xsdSearchDir string
 	if len(os.Args) >= 3 {
 		xsdSearchDir = os.Args[2]
+		info, err := os.Stat(xsdSearchDir)
+		if err != nil {
+			log.Fatalf("❌ Provided XSD directory does not exist: %v", err)
+		}
+		if !info.IsDir() {
+			log.Fatalf("❌ Provided XSD path is not a directory: %s", xsdSearchDir)
+		}
 	} else {
 		xsdSearchDir = filepath.Dir(xmlDir)
 	}
